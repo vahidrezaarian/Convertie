@@ -1,0 +1,39 @@
+﻿<Window x:Class="Convertie.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Convertie"
+        xmlns:wpfgif="http://wpfanimatedgif.codeplex.com"
+        xmlns:fa="http://schemas.fontawesome.io/icons/"
+        WindowStyle="ThreeDBorderWindow"
+        ShowInTaskbar="True"
+        ResizeMode="CanResize"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        ThemeMode="System"
+        Title="Convertie"
+        MinWidth="600" SizeToContent="WidthAndHeight">
+    <Grid>
+        <StackPanel Orientation="Vertical" Margin="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <TextBlock Text="From:" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,5,0,5">
+                <ComboBox Name="InputComboBox" VerticalAlignment="Center" FontWeight="SemiBold" SelectionChanged="InputComboBox_SelectionChanged"/>
+            </StackPanel>
+            <TextBox x:Name="InputTextBox" Background="Transparent" BorderThickness="1" Padding="10" FontSize="14"
+                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
+                     TextChanged="InputTextBox_TextChanged" GotFocus="InputTextBox_GotFocus"/>
+
+            <TextBlock Text="To:" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,5,0,5">
+                <ComboBox Name="OutputComboBox" VerticalAlignment="Center" FontWeight="SemiBold" SelectionChanged="OutputComboBox_SelectionChanged"/>
+                <ComboBox Name="TextEncodingDecodingCombobox" VerticalAlignment="Center" FontWeight="SemiBold" Margin="10,0,0,0" Visibility="Collapsed"/>
+                <Button HorizontalAlignment="Right" VerticalAlignment="Stretch" Content="Convert" Width="200" Padding="5" Margin="10,0,0,0"
+                        Background="BlueViolet" FontWeight="SemiBold" Click="ConvertButton_Click"/>
+            </StackPanel>
+            <TextBox x:Name="OutputTextBox" Background="Transparent" BorderThickness="1" Padding="10" FontSize="14"
+                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
+                     TextChanged="OutputTextBox_TextChanged" GotFocus="OutputTextBox_GotFocus"/>
+        </StackPanel>
+    </Grid>
+</Window>
