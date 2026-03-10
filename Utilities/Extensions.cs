@@ -67,6 +67,207 @@ public static class Extensions
     {
         return new SolidColorBrush((Color)ColorConverter.ConvertFromString(data));
     }
+
+    public static byte[] GetBytesByEncoding(this string value, EncodingTypes encodingType)
+    {
+        if (encodingType == EncodingTypes.ASCII)
+        {
+            return Encoding.ASCII.GetBytes(value);
+        }
+        else if (encodingType == EncodingTypes.UTF32)
+        {
+            return Encoding.UTF32.GetBytes(value);
+        }
+        else if (encodingType == EncodingTypes.Unicode)
+        {
+            return Encoding.Unicode.GetBytes(value);
+        }
+        else if (encodingType == EncodingTypes.BigEndianUnicode)
+        {
+            return Encoding.BigEndianUnicode.GetBytes(value);
+        }
+        else if (encodingType == EncodingTypes.Latin1)
+        {
+            return Encoding.Latin1.GetBytes(value);
+        }
+        else
+        {
+            return Encoding.UTF8.GetBytes(value);
+        }
+    }
+
+    public static string GetStringByEncoding(this byte[] value, EncodingTypes encodingType)
+    {
+        if (encodingType == EncodingTypes.ASCII)
+        {
+            return Encoding.ASCII.GetString(value);
+        }
+        else if (encodingType == EncodingTypes.UTF32)
+        {
+            return Encoding.UTF32.GetString(value);
+        }
+        else if (encodingType == EncodingTypes.Unicode)
+        {
+            return Encoding.Unicode.GetString(value);
+        }
+        else if (encodingType == EncodingTypes.BigEndianUnicode)
+        {
+            return Encoding.BigEndianUnicode.GetString(value);
+        }
+        else if (encodingType == EncodingTypes.Latin1)
+        {
+            return Encoding.Latin1.GetString(value);
+        }
+        else
+        {
+            return Encoding.UTF8.GetString(value);
+        }
+    }
+
+    public static string Convert(this string input, ConvertingTypes inputType, ConvertingTypes outputType, EncodingTypes encodingType)
+    {
+        switch (inputType)
+        {
+            case ConvertingTypes.Hex:
+            case ConvertingTypes.Base64:
+            case ConvertingTypes.Base64URL:
+                var bytes = inputType == ConvertingTypes.Hex ? input.ToByteArrayFromHexString() : inputType == ConvertingTypes.Base64 ? input.ToByteArrayFromBase64String() : input.ToByteArrayFromBase64UrlString();
+
+                if (outputType == ConvertingTypes.Hex)
+                {
+                    return bytes.ToHexString();
+                }
+                else if (outputType == ConvertingTypes.Base64)
+                {
+                    return bytes.ToBase64String();
+                }
+                else if (outputType == ConvertingTypes.Base64URL)
+                {
+                    return bytes.ToBase64UrlString();
+                }
+                else
+                {
+                    return bytes.GetStringByEncoding(encodingType);
+                }
+            case ConvertingTypes.CBOR:
+                return CBORObject.DecodeFromBytes(input.ToByteArrayFromHexString()).ToString();
+            default:
+                if (outputType == ConvertingTypes.Hex)
+                {
+                    return input.GetBytesByEncoding(encodingType).ToHexString();
+                }
+                else if (outputType == ConvertingTypes.Base64)
+                {
+                    return input.GetBytesByEncoding(encodingType).ToBase64String();
+                }
+                else if (outputType == ConvertingTypes.Base64URL)
+                {
+                    return input.GetBytesByEncoding(encodingType).ToBase64UrlString();
+                }
+                else if (outputType == ConvertingTypes.CBOR)
+                {
+                    return CborManualParser.Parse(input).EncodeToBytes().ToHexString();
+                }
+                return input;
+        }
+    }
+
+    public static bool IsHexString(this string value)
+    {
+        try
+        {
+            value.ToByteArrayFromHexString();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool IsBase64String(this string value)
+    {
+        try
+        {
+            value.ToByteArrayFromBase64String();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool IsBase64UrlString(this string value)
+    {
+        try
+        {
+            value.ToByteArrayFromBase64UrlString();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool IsCborByteArray(this string value)
+    {
+        try
+        {
+            byte[] bytes;
+            if (value.IsHexString())
+            {
+                bytes = value.ToByteArrayFromHexString();
+            }
+            else if (value.IsBase64String())
+            {
+                bytes = value.ToByteArrayFromBase64String();
+            }
+            else if (value.IsBase64UrlString())
+            {
+                bytes = value.ToByteArrayFromBase64UrlString();
+            }
+            else
+            {
+                return false;
+            }
+
+            CBORObject.DecodeFromBytes(bytes);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool IsCborByteArray(this byte[] value)
+    {
+        try
+        {
+            
+            CBORObject.DecodeFromBytes(value);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool CanBeCborObject(this string value)
+    {
+        try
+        {
+            CborManualParser.Parse(value);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
 
 public static class Utils
@@ -206,32 +407,70 @@ public static class Utils
         return encrypted;
     }
 
-    public static List<ConvertingTypes> GetInputTypes()
-    {
-        return [ConvertingTypes.Text, ConvertingTypes.Hex, ConvertingTypes.CBOR, ConvertingTypes.Base64, ConvertingTypes.Base64URL];
-    }
-
-    public static List<ConvertingTypes> GetOutputTypes(ConvertingTypes inputType)
-    {
-        switch (inputType)
-        {
-            case ConvertingTypes.Text:
-                return [ConvertingTypes.Hex, ConvertingTypes.Base64, ConvertingTypes.Base64URL];
-            case ConvertingTypes.Hex:
-                return [ConvertingTypes.Text, ConvertingTypes.CBOR, ConvertingTypes.Base64, ConvertingTypes.Base64URL];
-            case ConvertingTypes.CBOR:
-                return [ConvertingTypes.Hex, ConvertingTypes.Base64, ConvertingTypes.Base64URL];
-            case ConvertingTypes.Base64:
-                return [ConvertingTypes.Text, ConvertingTypes.Hex, ConvertingTypes.CBOR, ConvertingTypes.Base64URL];
-            case ConvertingTypes.Base64URL:
-                return [ConvertingTypes.Text, ConvertingTypes.Hex, ConvertingTypes.CBOR, ConvertingTypes.Base64];
-            default:
-                throw new NotSupportedException("Input is not supported!");
-        }
-    }
-
     public static List<EncodingTypes> GetEncodingDecodingTypes()
     {
-        return [EncodingTypes.UTF8, EncodingTypes.ASCII, EncodingTypes.UTF7, EncodingTypes.UTF32, EncodingTypes.Unicode, EncodingTypes.BigEndianUnicode, EncodingTypes.Latin1 ];
+        return [EncodingTypes.UTF8, EncodingTypes.ASCII, EncodingTypes.UTF32, EncodingTypes.Unicode, EncodingTypes.BigEndianUnicode, EncodingTypes.Latin1 ];
+    }
+
+    public static List<ConvertingTypes> GetInputConvertingTypes(string input)
+    {
+        var list = new List<ConvertingTypes>();
+
+        if (input.IsCborByteArray())
+        {
+            list.Add(ConvertingTypes.CBOR);
+        }
+
+        if (input.IsHexString())
+        {
+            list.Add(ConvertingTypes.Hex);
+        }
+        else if (input.IsBase64String())
+        {
+            list.Add(ConvertingTypes.Base64);
+        }
+        else if (input.IsBase64UrlString())
+        {
+            list.Add(ConvertingTypes.Base64URL);
+        }
+
+        list.Add(ConvertingTypes.Text);
+
+        return list;
+    }
+
+    public static List<ConvertingTypes> GetOutputConvertingTypes(string input, ConvertingTypes inputType)
+    {
+        var list = new List<ConvertingTypes>();
+
+        if (inputType == ConvertingTypes.Text)
+        {
+            if (input.CanBeCborObject())
+            {
+                list.Add(ConvertingTypes.CBOR);
+            }
+        }
+        else
+        {
+            list.Add(ConvertingTypes.Text);
+        }
+
+        if (inputType != ConvertingTypes.CBOR)
+        {
+            if (inputType != ConvertingTypes.Hex)
+            {
+                list.Add(ConvertingTypes.Hex);
+            }
+            if (inputType != ConvertingTypes.Base64)
+            {
+                list.Add(ConvertingTypes.Base64);
+            }
+            if (inputType != ConvertingTypes.Base64URL)
+            {
+                list.Add(ConvertingTypes.Base64URL);
+            }
+        }
+
+        return list;
     }
 }
