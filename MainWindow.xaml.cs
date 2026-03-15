@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     private bool _convertImmediately = false;
     private bool _clipboardSuggestionCancelled = false;
     private string _cancelledClipboardSuggestionContent = string.Empty;
+    private string _detectedCborInClipboard = string.Empty;
     private readonly DispatcherTimer _typingTimer;
     private readonly DispatcherTimer _convertingTimer;
     private readonly Lock _conversionTaskLock = new();
@@ -45,7 +46,8 @@ public partial class MainWindow : Window
         CopyButtonIcon.Source = CustomIcons.Copy(SystemColors.AccentColor);
         ReverseButtonIcon.Source = CustomIcons.ArrowUp(SystemColors.AccentColor);
         ClipboardSuggestionCancelButtonIcon.Source = CustomIcons.Close(Colors.White);
-        ClipboardSuggestionButton.Background = SystemColors.AccentColorBrush;
+        DetectedCborDecodeSuggestionCancelButtonIcon.Source = CustomIcons.Close(Colors.White);
+        DetectedCborDecodeSuggestionButton.Background = SystemColors.AccentColorBrush;
         TextEncodingDecodingCombobox.ItemsSource = Utils.GetEncodingDecodingTypes();
         TextEncodingDecodingCombobox.SelectedIndex = 0;
 
@@ -63,7 +65,6 @@ public partial class MainWindow : Window
         _convertingTimer.Stop();
         Dispatcher.Invoke(() =>
         {
-            ClipboardSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
             StartTheConversionTask(InputTextBox.Text);
         });
     }
@@ -242,6 +243,9 @@ public partial class MainWindow : Window
     private void InputTextBoxTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
         InputHint.Visibility = Visibility.Collapsed;
+        DetectedCborDecodeSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
+        ClipboardSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
+
         _typingTimer.Stop();
         _convertingTimer.Stop();
 
@@ -272,7 +276,23 @@ public partial class MainWindow : Window
                 var clipboardText = Clipboard.GetText();
                 Task.Run(() =>
                 {
-                    if (!string.IsNullOrEmpty(clipboardText) && Utils.GetInputConvertingTypes(clipboardText).Count > 0)
+                    var inputTypes = Utils.GetInputConvertingTypes(clipboardText);
+
+                    _detectedCborInClipboard = string.Empty;
+                    if (!inputTypes.Contains(ConvertingTypes.CBOR) && clipboardText.ContainsCbor(out string detectedCborHex) &&
+                        detectedCborHex != _detectedCborInClipboard)
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            _detectedCborInClipboard = detectedCborHex;
+                            if (InputTextBox.Text != _detectedCborInClipboard)
+                            {
+                                DetectedCborDecodeSuggestionButtonsGrid.Visibility = Visibility.Visible;
+                            }
+                        });
+                    }
+
+                    if (!string.IsNullOrEmpty(clipboardText) && inputTypes.Count > 0)
                     {
                         Dispatcher.Invoke(() =>
                         {
@@ -281,7 +301,9 @@ public partial class MainWindow : Window
                                 _clipboardSuggestionCancelled = false;
                                 _cancelledClipboardSuggestionContent = string.Empty;
                             }
-                            if (!_clipboardSuggestionCancelled && InputTextBox.Text != clipboardText)
+
+                            if (!_clipboardSuggestionCancelled && InputTextBox.Text != clipboardText && 
+                                InputTextBox.Text != _detectedCborInClipboard)
                             {
                                 ClipboardSuggestionButtonsGrid.Visibility = Visibility.Visible;
                             }
@@ -349,6 +371,16 @@ public partial class MainWindow : Window
         _clipboardSuggestionCancelled = true;
         _cancelledClipboardSuggestionContent = Clipboard.GetText();
         InputTextBox.Focus();
+    }
+
+    private void DetectedCborDecodeSuggestionCancelButtonClick(object sender, RoutedEventArgs e)
+    {
+        DetectedCborDecodeSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
+    }
+
+    private void DetectedCborDecodeSuggestionButtonClick(object sender, RoutedEventArgs e)
+    {
+        InputTextBox.Text = _detectedCborInClipboard;
     }
     #endregion
 }

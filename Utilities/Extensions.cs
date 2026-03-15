@@ -279,6 +279,50 @@ public static class Extensions
             return false;
         }
     }
+
+    public static bool ContainsCbor(this string value, out string detectedCborHexString)
+    {
+        detectedCborHexString = string.Empty;
+        try
+        {
+            byte[] bytes;
+            if (value.IsHexString())
+            {
+                bytes = value.ToByteArrayFromHexString();
+            }
+            else if (value.IsBase64String())
+            {
+                bytes = value.ToByteArrayFromBase64String();
+            }
+            else if (value.IsBase64UrlString())
+            {
+                bytes = value.ToByteArrayFromBase64UrlString();
+            }
+            else
+            {
+                return false;
+            }
+
+            using var ms = new MemoryStream(bytes);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                ms.Position = i;
+                try
+                {
+                    var result = CBORObject.Read(ms);
+                    var cborBytes = result.EncodeToBytes();
+                    if (result.Type == CBORType.Map && cborBytes.Length > 2)
+                    {
+                        detectedCborHexString = cborBytes.ToHexString();
+                        return true;
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return false;
+    }
 }
 
 public static class Utils
