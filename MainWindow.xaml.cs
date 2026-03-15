@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Convertie;
 
@@ -30,6 +31,9 @@ public partial class MainWindow : Window
 {
     private bool _isHorizontal = true;
     private bool _convertOnTypeChange = false;
+    private bool _convertImmediately = false;
+    private readonly DispatcherTimer _typingTimer;
+    private readonly DispatcherTimer _convertingTimer;
     private readonly Lock _conversionTaskLock = new();
 
     public MainWindow()
@@ -41,6 +45,24 @@ public partial class MainWindow : Window
         ClipboardSuggestionButton.Background = SystemColors.AccentColorBrush;
         TextEncodingDecodingCombobox.ItemsSource = Utils.GetEncodingDecodingTypes();
         TextEncodingDecodingCombobox.SelectedIndex = 0;
+
+        _typingTimer = new();
+        _typingTimer.Tick += ConvertionTimerTimeout;
+        _typingTimer.Interval = TimeSpan.FromMilliseconds(500);
+        _convertingTimer = new();
+        _convertingTimer.Tick += ConvertionTimerTimeout;
+        _convertingTimer.Interval = TimeSpan.FromMilliseconds(50);
+    }
+
+    private void ConvertionTimerTimeout(object? sender, EventArgs e)
+    {
+        _typingTimer.Stop();
+        _convertingTimer.Stop();
+        Dispatcher.Invoke(() =>
+        {
+            ClipboardSuggestionButton.Visibility = Visibility.Collapsed;
+            CreateConversionTask(InputTextBox.Text);
+        });
     }
 
     private void ShowError(string content, int duration = 3000)
@@ -220,21 +242,36 @@ public partial class MainWindow : Window
     #region Callbacks
     private void InputTextBoxTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
-        ClipboardSuggestionButton.Visibility = Visibility.Collapsed;
-        CreateConversionTask(InputTextBox.Text);
+        _typingTimer.Stop();
+        _convertingTimer.Stop();
+        if (_convertImmediately)
+        {
+            _convertingTimer.Start();
+        }
+        else
+        {
+            _typingTimer.Start();
+        }
+        _convertImmediately = false;
     }
 
     private void InputTextBoxGotFocus(object sender, RoutedEventArgs e)
     {
-        var clipboardText = Clipboard.GetText();
         InputHint.Visibility = Visibility.Collapsed;
-        if (!string.IsNullOrEmpty(clipboardText) && InputTextBox.Text != clipboardText)
+        var clipboardText = Clipboard.GetText();
+        Task.Run(() =>
         {
-            if (Utils.GetInputConvertingTypes(clipboardText).Count > 0)
+            if (!string.IsNullOrEmpty(clipboardText) && Utils.GetInputConvertingTypes(clipboardText).Count > 0)
             {
-                ClipboardSuggestionButton.Visibility = Visibility.Visible;
+                Dispatcher.Invoke(() =>
+                {
+                    if (InputTextBox.Text != clipboardText)
+                    {
+                        ClipboardSuggestionButton.Visibility = Visibility.Visible;
+                    }
+                });
             }
-        }
+        });
     }
 
     private void InputTextBoxLostFocus(object sender, RoutedEventArgs e)
@@ -275,6 +312,7 @@ public partial class MainWindow : Window
 
     private void ReverseButtonClick(object sender, RoutedEventArgs e)
     {
+        _convertImmediately = true;
         InputTextBox.Text = OutputTextBox.Text;
     }
 
@@ -297,6 +335,7 @@ public partial class MainWindow : Window
         var clipboardText = Clipboard.GetText();
         if (!string.IsNullOrEmpty(clipboardText))
         {
+            _convertImmediately = true;
             InputTextBox.Text = clipboardText;
         }
     }
