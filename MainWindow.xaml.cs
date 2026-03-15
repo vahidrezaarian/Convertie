@@ -258,19 +258,27 @@ public partial class MainWindow : Window
     private void InputTextBoxGotFocus(object sender, RoutedEventArgs e)
     {
         InputHint.Visibility = Visibility.Collapsed;
-        var clipboardText = Clipboard.GetText();
+
         Task.Run(() =>
         {
-            if (!string.IsNullOrEmpty(clipboardText) && Utils.GetInputConvertingTypes(clipboardText).Count > 0)
+            Task.Delay(20).Wait();
+            Dispatcher.Invoke(() =>
             {
-                Dispatcher.Invoke(() =>
+                var clipboardText = Clipboard.GetText();
+                Task.Run(() =>
                 {
-                    if (InputTextBox.Text != clipboardText)
+                    if (!string.IsNullOrEmpty(clipboardText) && Utils.GetInputConvertingTypes(clipboardText).Count > 0)
                     {
-                        ClipboardSuggestionButton.Visibility = Visibility.Visible;
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (InputTextBox.Text != clipboardText)
+                            {
+                                ClipboardSuggestionButton.Visibility = Visibility.Visible;
+                            }
+                        });
                     }
                 });
-            }
+            });
         });
     }
 
