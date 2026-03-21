@@ -35,7 +35,7 @@
 
                 <TextBlock Grid.Row="0" x:Name="InputElementTitle" Text="From:" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed"/>
                 <ComboBox Grid.Row="1" Name="InputComboBox" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0" FontWeight="SemiBold" SelectionChanged="ComboBoxSelectionChanged" Visibility="Collapsed"/>
-                <TextBlock Grid.Row="2" x:Name="InputHint" Text="Type or paste to convert!" Foreground="Gray" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="2" x:Name="InputHint" Text="Type or paste to convert" Foreground="Gray" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 <TextBox Grid.Row="2" x:Name="InputTextBox" Background="Transparent" BorderThickness="1" Padding="10" FontSize="14" Margin="0,5,0,0"
                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True"
                          TextChanged="InputTextBoxTextChanged" GotFocus="InputTextBoxGotFocus"/>

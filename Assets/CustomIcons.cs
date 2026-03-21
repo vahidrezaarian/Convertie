@@ -116,13 +116,17 @@ namespace Convertie.Assets
         {
             var drawingGroup = new DrawingGroup();
 
-            var geometry1 = Geometry.Parse("M14.83,14.83L9.17,9.17");
-            var drawing1 = new GeometryDrawing(new SolidColorBrush(color), null, geometry1);
-            drawingGroup.Children.Add(drawing1);
+            var geometry = Geometry.Parse("M18,18 L12,12 M12,12 L6,6 M12,12 L18,6 M12,12 L6,18");
 
-            var geometry2 = Geometry.Parse("M9.17,14.83L14.83,9.17");
-            var drawing2 = new GeometryDrawing(new SolidColorBrush(color), null, geometry2);
-            drawingGroup.Children.Add(drawing2);
+            var pen = new Pen(new SolidColorBrush(color), 2)
+            {
+                StartLineCap = PenLineCap.Round,
+                EndLineCap = PenLineCap.Round,
+                LineJoin = PenLineJoin.Round
+            };
+
+            var drawing = new GeometryDrawing(null, pen, geometry);
+            drawingGroup.Children.Add(drawing);
 
             var drawingImage = new DrawingImage(drawingGroup);
             drawingImage.Freeze();

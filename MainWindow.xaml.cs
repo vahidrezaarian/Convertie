@@ -522,12 +522,7 @@ public partial class MainWindow : Window
     {
         ClipboardSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
         _cancelledClipboardSuggestionContent = _lastCachedClipboardContent;
-    }
-
-    private void DetectedCborDecodeSuggestionCancelButtonClick(object sender, RoutedEventArgs e)
-    {
-        DetectedCborDecodeSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
-        _cancelledDetectedCborInClipboard = _detectedCborInClipboard;
+        InputTextBox.Focus();
     }
 
     private void DetectedCborDecodeSuggestionButtonClick(object sender, RoutedEventArgs e)
@@ -537,6 +532,13 @@ public partial class MainWindow : Window
             _convertImmediately = true;
             InputTextBox.Text = _detectedCborInClipboard;
         }
+    }
+
+    private void DetectedCborDecodeSuggestionCancelButtonClick(object sender, RoutedEventArgs e)
+    {
+        DetectedCborDecodeSuggestionButtonsGrid.Visibility = Visibility.Collapsed;
+        _cancelledDetectedCborInClipboard = _detectedCborInClipboard;
+        InputTextBox.Focus();
     }
 
     private void AutoConvertInputTypeComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
