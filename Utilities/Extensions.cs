@@ -515,10 +515,7 @@ public static class Utils
             list.Add(ConvertingTypes.Base64URL);
         }
 
-        if (list.Count == 0)
-        {
-            list.Add(ConvertingTypes.Text);
-        }
+        list.Add(ConvertingTypes.Text);
 
         return list;
     }

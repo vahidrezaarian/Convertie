@@ -89,9 +89,12 @@ public partial class MainWindow : Window
         ReverseButtonIcon.Source = CustomIcons.ArrowUp(SystemColors.AccentColor);
         ClipboardSuggestionCancelButtonIcon.Source = CustomIcons.Close(Colors.White);
         DetectedCborDecodeSuggestionCancelButtonIcon.Source = CustomIcons.Close(Colors.White);
+        ClipboardSuggestionButton.Background = SystemColors.AccentColorBrush;
+        ClipboardSuggestionButton.Foreground = Brushes.White;
         DetectedCborDecodeSuggestionButton.Background = SystemColors.AccentColorBrush;
-        ClipboardSuggestionButton.Background = SystemColors.GrayTextBrush;
-        ClipboardSuggestionCancelButton.Background = SystemColors.GrayTextBrush;
+        DetectedCborDecodeSuggestionButton.Foreground = Brushes.White;
+        ClipboardSuggestionCancelButton.Background = SystemColors.AccentColorBrush;
+        SuggestionGridBackground.Background = SystemColors.GradientActiveCaptionBrush;
         DetectedCborDecodeSuggestionCancelButton.Background = SystemColors.AccentColorBrush;
         TextEncodingDecodingCombobox.ItemsSource = Utils.GetEncodingDecodingTypes();
         AutoConvertTextEncodingDecodingCombobox.ItemsSource = Utils.GetEncodingDecodingTypes();
@@ -217,6 +220,8 @@ public partial class MainWindow : Window
                 (ConvertingTypes)OutputComboBox.SelectedItem,
                 (EncodingTypes)TextEncodingDecodingCombobox.SelectedItem);
             SetupContentGrid();
+            UpdateInputLength();
+            UpdateOutputLength();
         }
         catch (Exception ex)
         {
@@ -421,6 +426,58 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateInputLength()
+    {
+        if (InputComboBox.SelectedItem is null)
+        {
+            InputLength.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(InputTextBox.Text))
+        {
+            return;
+        }
+
+        var inputType = (ConvertingTypes)InputComboBox.SelectedItem;
+        var input = InputTextBox.Text;
+
+        InputLength.Text = inputType switch
+        {
+            ConvertingTypes.Hex or ConvertingTypes.CBOR => $"({input.ToByteArrayFromHexString().Length} bytes)  ({input.Length} characters)",
+            ConvertingTypes.Base64 => $"({input.ToByteArrayFromBase64String().Length} bytes)  ({input.Length} characters)",
+            ConvertingTypes.Base64URL => $"({input.ToByteArrayFromBase64UrlString().Length} bytes)  ({input.Length} characters)",
+            _ => $"({input.Length} characters)",
+        };
+        InputLength.Visibility = Visibility.Visible;
+    }
+
+    private void UpdateOutputLength()
+    {
+        if (OutputComboBox.SelectedItem is null)
+        {
+            OutputLength.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(InputTextBox.Text))
+        {
+            return;
+        }
+
+        var inputType = (ConvertingTypes)OutputComboBox.SelectedItem;
+        var input = OutputTextBox.Text;
+
+        OutputLength.Text = inputType switch
+        {
+            ConvertingTypes.Hex or ConvertingTypes.CBOR => $"({input.ToByteArrayFromHexString().Length} bytes)  ({input.Length} characters)",
+            ConvertingTypes.Base64 => $"({input.ToByteArrayFromBase64String().Length} bytes)  ({input.Length} characters)",
+            ConvertingTypes.Base64URL => $"({input.ToByteArrayFromBase64UrlString().Length} bytes)  ({input.Length} characters)",
+            _ => $"({input.Length} characters)",
+        };
+        OutputLength.Visibility = Visibility.Visible;
+    }
+
     #region Overrides
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
@@ -432,6 +489,7 @@ public partial class MainWindow : Window
     private void InputTextBoxTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
         InputHint.Visibility = string.IsNullOrEmpty(InputTextBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        InputLength.Visibility = string.IsNullOrEmpty(InputTextBox.Text) ? Visibility.Collapsed : Visibility.Visible;
 
         SetDetectedCborDecodeSuggestionGridVisibility(Visibility.Collapsed);
         SetClipoboardSuggestionGridVisibility(Visibility.Collapsed);
@@ -510,11 +568,13 @@ public partial class MainWindow : Window
     {
         if (_convertOnTypeChange)
         {
+            _convertOnTypeChange = false;
             if (e.Source is ComboBox comboBox && comboBox.Name == "InputComboBox")
             {
                 OutputComboBox.ItemsSource = Utils.GetOutputConvertingTypes(InputTextBox.Text, (ConvertingTypes)InputComboBox.SelectedItem);
                 OutputComboBox.SelectedIndex = 0;
             }
+            _convertOnTypeChange = true;
 
             SetEncodingDecodingComboBox();
 
