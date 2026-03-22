@@ -88,7 +88,8 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
                     <ComboBox Name="OutputComboBox" VerticalAlignment="Center" FontWeight="SemiBold" SelectionChanged="ComboBoxSelectionChanged"/>
                     <ComboBox Name="TextEncodingDecodingCombobox" VerticalAlignment="Center" FontWeight="SemiBold" Margin="10,0,0,0" SelectionChanged="ComboBoxSelectionChanged" Visibility="Collapsed"/>
-                    <Button x:Name="ReverseButton" Padding="5" Width="33" Height="33" Margin="10,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Click="ReverseButtonClick">
+                    <Button x:Name="ReverseButton" Padding="6" Width="33" Height="33" Margin="10,0,0,0" 
+                            VerticalAlignment="Center" HorizontalAlignment="Left" Click="ReverseButtonClick">
                         <Image x:Name="ReverseButtonIcon" />
                     </Button>
                     <Button x:Name="CopyButton" Padding="5" Width="33" Height="33" Margin="10,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Click="CopyButtonClick">
