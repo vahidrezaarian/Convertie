@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Media;
 
 namespace Convertie.Utilities;
@@ -31,6 +32,44 @@ public static class Extensions
     public static string ToHexString(this byte[] data)
     {
         return Utils.ConvertByteArrayToHexString(data);
+    }
+
+    public static string ToBinaryString(this byte[] data)
+    {
+        StringBuilder sb = new StringBuilder(data.Length * 8);
+        foreach (byte b in data)
+        {
+            sb.Append(System.Convert.ToString(b, 2).PadLeft(8, '0'));
+        }
+        return sb.ToString();
+    }
+
+    public static byte[] ToByteArrayFromBinaryString(this string binary)
+    {
+        if (string.IsNullOrEmpty(binary))
+            return Array.Empty<byte>();
+
+        int remainder = binary.Length % 8;
+        if (remainder != 0)
+        {
+            binary = binary.PadLeft(binary.Length + (8 - remainder), '0');
+        }
+
+        int numOfBytes = binary.Length / 8;
+        byte[] bytes = new byte[numOfBytes];
+
+        for (int i = 0; i < numOfBytes; i++)
+        {
+            string byteString = binary.Substring(i * 8, 8);
+            bytes[i] = System.Convert.ToByte(byteString, 2);
+        }
+
+        return bytes;
+    }
+
+    public static bool IsBinary(this string s)
+    {
+        return Regex.IsMatch(s, "^[01]+$");
     }
 
     public static byte[] ToByteArrayFromHexString(this string data)
@@ -131,7 +170,9 @@ public static class Extensions
             case ConvertingTypes.Hex:
             case ConvertingTypes.Base64:
             case ConvertingTypes.Base64URL:
-                var bytes = inputType == ConvertingTypes.Hex ? input.ToByteArrayFromHexString() : inputType == ConvertingTypes.Base64 ? input.ToByteArrayFromBase64String() : input.ToByteArrayFromBase64UrlString();
+            case ConvertingTypes.Binary:
+                var bytes = inputType == ConvertingTypes.Hex ? input.ToByteArrayFromHexString() : inputType == ConvertingTypes.Base64 ? input.ToByteArrayFromBase64String() : 
+                    inputType == ConvertingTypes.Base64URL ? input.ToByteArrayFromBase64UrlString() : input.ToByteArrayFromBinaryString();
 
                 if (outputType == ConvertingTypes.Hex)
                 {
@@ -144,6 +185,10 @@ public static class Extensions
                 else if (outputType == ConvertingTypes.Base64URL)
                 {
                     return bytes.ToBase64UrlString();
+                }
+                else if (outputType == ConvertingTypes.Binary)
+                {
+                    return bytes.ToBinaryString();
                 }
                 else
                 {
@@ -166,6 +211,10 @@ public static class Extensions
                 if (outputType == ConvertingTypes.Hex)
                 {
                     return input.GetBytesByEncoding(encodingType).ToHexString();
+                }
+                if (outputType == ConvertingTypes.Binary)
+                {
+                    return input.GetBytesByEncoding(encodingType).ToBinaryString();
                 }
                 else if (outputType == ConvertingTypes.Base64)
                 {
@@ -271,6 +320,10 @@ public static class Extensions
     {
         try
         {
+            if (value.Length < 4)
+            {
+                return false;
+            }
             CborManualParser.Parse(value);
             return true;
         }
@@ -280,11 +333,31 @@ public static class Extensions
         }
     }
 
+    public static bool ContainsWhiteSpaces(this string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        return value.Any(c => char.IsWhiteSpace(c));
+    }
+
+    public static string RemoveWhiteSpaces(this string value)
+    {
+        return new string([.. value.Where(c => c != ' ' && c != '\r' && c != '\n')]);
+    }
+
     public static bool ContainsCbor(this string value, out string detectedCborHexString)
     {
         detectedCborHexString = string.Empty;
         try
         {
+            value = value.RemoveWhiteSpaces();
+
+            if (value.IsCborByteArray())
+            {
+                return true;
+            }
+
             byte[] bytes;
             if (value.IsHexString())
             {
@@ -474,6 +547,7 @@ public static class Utils
         bool isHex = false;
         bool isBase64 = false;
         bool isBase64Url = false;
+        bool isBinary = false;
 
         var task1 = Task.Run(() =>
         {
@@ -491,28 +565,42 @@ public static class Utils
         {
             isBase64Url = input.IsBase64UrlString();
         });
+        var task5 = Task.Run(() =>
+        {
+            isBinary = input.IsBinary();
+        });
 
         task1.Wait();
         task2.Wait();
         task3.Wait();
         task4.Wait();
+        task5.Wait();
 
         if (isCbor)
         {
             list.Add(ConvertingTypes.CBOR);
         }
 
+        if (isBinary)
+        {
+            list.Add(ConvertingTypes.Binary);
+        }
+
         if (isHex)
         {
             list.Add(ConvertingTypes.Hex);
         }
-        else if (isBase64)
+
+        if (!isHex && !isBinary)
         {
-            list.Add(ConvertingTypes.Base64);
-        }
-        else if (isBase64Url)
-        {
-            list.Add(ConvertingTypes.Base64URL);
+            if (isBase64)
+            {
+                list.Add(ConvertingTypes.Base64);
+            }
+            else if (isBase64Url)
+            {
+                list.Add(ConvertingTypes.Base64URL);
+            }
         }
 
         list.Add(ConvertingTypes.Text);
@@ -526,14 +614,10 @@ public static class Utils
 
         if (inputType == ConvertingTypes.Text)
         {
-            if (input != null && input.CanBeCborObject())
+            if (!string.IsNullOrEmpty(input) && input.CanBeCborObject())
             {
                 list.Add(ConvertingTypes.CBOR);
             }
-        }
-        else
-        {
-            list.Add(ConvertingTypes.Text);
         }
 
         if (inputType != ConvertingTypes.CBOR)
@@ -541,6 +625,10 @@ public static class Utils
             if (inputType != ConvertingTypes.Hex)
             {
                 list.Add(ConvertingTypes.Hex);
+            }
+            if (inputType != ConvertingTypes.Binary)
+            {
+                list.Add(ConvertingTypes.Binary);
             }
             if (inputType != ConvertingTypes.Base64)
             {
@@ -550,6 +638,11 @@ public static class Utils
             {
                 list.Add(ConvertingTypes.Base64URL);
             }
+        }
+
+        if (inputType != ConvertingTypes.Text)
+        {
+            list.Add(ConvertingTypes.Text);
         }
 
         return list;
