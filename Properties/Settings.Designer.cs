@@ -58,5 +58,17 @@ namespace Convertie.Properties {
                 this["AutoConvertingEncodingDecoding"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool TopMosetStatus {
+            get {
+                return ((bool)(this["TopMosetStatus"]));
+            }
+            set {
+                this["TopMosetStatus"] = value;
+            }
+        }
     }
 }

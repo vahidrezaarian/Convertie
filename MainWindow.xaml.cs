@@ -97,6 +97,7 @@ public partial class MainWindow : Window
     private void InitializeGuiElements()
     {
         InitialzeAutoConvertInputTypeComboBox();
+        SetupTopMostButtonAndValue();
         PanelChangeIcon.Source = CustomIcons.ScreenVertical(SystemColors.AccentColor);
         CopyButtonIcon.Source = CustomIcons.Copy(SystemColors.AccentColor);
         ReverseButtonIcon.Source = CustomIcons.ArrowUp(SystemColors.AccentColor);
@@ -536,6 +537,22 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SetupTopMostButtonAndValue()
+    {
+        Topmost = Properties.Settings.Default.TopMosetStatus;
+
+        if (Topmost)
+        {
+            WindowPinToggleButtonIcon.Source = CustomIcons.Pinned(SystemColors.AccentColor);
+            WindowPinToggleButton.ToolTip = "Unpin the window from the screen.";
+        }
+        else
+        {
+            WindowPinToggleButtonIcon.Source = CustomIcons.Unpinned(SystemColors.AccentColor);
+            WindowPinToggleButton.ToolTip = "Pin the window to the screen.";
+        }
+    }
+
     #region Overrides
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
@@ -788,6 +805,13 @@ public partial class MainWindow : Window
     {
         _convertImmediately = true;
         InputTextBox.Text = InputTextBox.Text.RemoveWhiteSpaces();
+    }
+
+    private void WindowPinToggleButtonClick(object sender, RoutedEventArgs e)
+    {
+        Properties.Settings.Default.TopMosetStatus = !Properties.Settings.Default.TopMosetStatus;
+        Properties.Settings.Default.Save();
+        SetupTopMostButtonAndValue();
     }
     #endregion
 }
