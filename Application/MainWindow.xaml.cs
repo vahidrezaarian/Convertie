@@ -566,6 +566,13 @@ public partial class MainWindow : Window
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         DragMove();
+        if (!InputTextBox.IsMouseOver)
+        {
+            Keyboard.ClearFocus();
+            FocusManager.SetFocusedElement(FocusManager.GetFocusScope(InputTextBox), null);
+            SetClipoboardSuggestionGridVisibility(Visibility.Collapsed);
+            SetDetectedCborDecodeSuggestionGridVisibility(Visibility.Collapsed);
+        }
     }
     #endregion
 
